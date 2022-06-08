@@ -114,6 +114,9 @@ class DataDictionaryTraversal:
             ]
             
             print(f'topology children - {children}')
+            
+            if 'timing' in stack:
+                children = list(filter(lambda k: 'timing' != k, children))
 
             visited_children = [child for child in children if child not in path]
             
