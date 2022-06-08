@@ -94,8 +94,10 @@ class DataDictionaryTraversal:
 
     def _topology_order(self, node_name, source_edges, target_class):
         stack, path = [node_name], []
-
+        
         while stack:
+            print(f'topology inside - {stack}')
+            print(f'topology path - {path}')
             vertex = stack[-1]
 
             node_class = self.model.Node.get_subclass(vertex)
@@ -104,13 +106,18 @@ class DataDictionaryTraversal:
             ), f"Node name '{vertex}' does not exist in the graph data model. Maybe you need to provide a 'root_node' (see Pelican documentation)?"
             node = node_class.__name__
             edges = getattr(self.model.Edge, source_edges)(node)
+            print(f'topology edges - {edges}')
 
             children = [
                 self.model.Node.get_subclass_named(getattr(e, target_class)).get_label()
                 for e in edges
             ]
+            
+            print(f'topology children - {children}')
 
             visited_children = [child for child in children if child not in path]
+            
+            print(f'topology visited - {visited_children}')
 
             if not visited_children:
                 path.insert(0, vertex)
