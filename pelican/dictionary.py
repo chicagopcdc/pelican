@@ -127,6 +127,8 @@ class DataDictionaryTraversal:
         return self._topology_order(node_name, "_get_edges_with_dst", "__src_class__")
 
     def full_traverse_path(self, node_name, extra_nodes=None, include_upward=False):
+        print(f'inside full traverse - {include_upward}')
+        
         if include_upward:
             upward_path = list(
                 zip(itertools.repeat(False), self.get_upward_path(node_name))
