@@ -133,9 +133,12 @@ class DataDictionaryTraversal:
             upward_path = list(
                 zip(itertools.repeat(False), self.get_upward_path(node_name))
             )
+            print(f'after upward path')
             downward_path = list(
                 zip(itertools.repeat(True), self.get_downward_path(node_name))
             )[1:]
+            print(f'iafter downward path')
+            print(f'extra nodes - {extra_nodes}')
             if extra_nodes:
                 path = (
                     upward_path
