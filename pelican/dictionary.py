@@ -99,6 +99,7 @@ class DataDictionaryTraversal:
             print(f'topology inside - {stack}')
             print(f'topology path - {path}')
             vertex = stack[-1]
+            print(f'topology vertex - {vertex}')
 
             node_class = self.model.Node.get_subclass(vertex)
             assert (
@@ -106,21 +107,21 @@ class DataDictionaryTraversal:
             ), f"Node name '{vertex}' does not exist in the graph data model. Maybe you need to provide a 'root_node' (see Pelican documentation)?"
             node = node_class.__name__
             edges = getattr(self.model.Edge, source_edges)(node)
-            print(f'topology edges - {edges}')
+            # print(f'topology edges - {edges}')
 
             children = [
                 self.model.Node.get_subclass_named(getattr(e, target_class)).get_label()
                 for e in edges
             ]
             
-            print(f'topology children - {children}')
+            # print(f'topology children - {children}')
             
             if 'timing' in stack:
                 children = list(filter(lambda k: 'timing' != k, children))
 
             visited_children = [child for child in children if child not in path]
             
-            print(f'topology visited - {visited_children}')
+            # print(f'topology visited - {visited_children}')
 
             if not visited_children:
                 path.insert(0, vertex)
@@ -137,18 +138,18 @@ class DataDictionaryTraversal:
         return self._topology_order(node_name, "_get_edges_with_dst", "__src_class__")
 
     def full_traverse_path(self, node_name, extra_nodes=None, include_upward=False):
-        print(f'inside full traverse - {include_upward}')
+        # print(f'inside full traverse - {include_upward}')
         
         if include_upward:
             upward_path = list(
                 zip(itertools.repeat(False), self.get_upward_path(node_name))
             )
-            print(f'after upward path')
+            # print(f'after upward path')
             downward_path = list(
                 zip(itertools.repeat(True), self.get_downward_path(node_name))
             )[1:]
-            print(f'iafter downward path')
-            print(f'extra nodes - {extra_nodes}')
+            # print(f'iafter downward path')
+            # print(f'extra nodes - {extra_nodes}')
             if extra_nodes:
                 path = (
                     upward_path
