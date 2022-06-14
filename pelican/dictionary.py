@@ -96,10 +96,10 @@ class DataDictionaryTraversal:
         stack, path = [node_name], []
         
         while stack:
-            print(f'topology inside - {stack}')
-            print(f'topology path - {path}')
+            # print(f'topology inside - {stack}')
+            # print(f'topology path - {path}')
             vertex = stack[-1]
-            print(f'topology vertex - {vertex}')
+            # print(f'topology vertex - {vertex}')
 
             node_class = self.model.Node.get_subclass(vertex)
             assert (
