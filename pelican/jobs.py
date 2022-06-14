@@ -74,6 +74,8 @@ def export_pfb_job(
     print(f"Starting to export PFB at {start_time}")
 
     it = ddt.get_edges_by_node()
+    
+    # print(f'got edges')
 
     table_logs = "{:<40}"
     current_ids = defaultdict(list)
@@ -82,11 +84,19 @@ def export_pfb_job(
 
     nodes_to_write = []
 
+    # print(f'before loop')
     for way, node_name in ddt.full_traverse_path(
         root_node, extra_nodes=extra_nodes, include_upward=include_upward
     ):
+        # print(f'inside loop')
+        # print(f'debug -  {way}')
+        # print(f'debug -  {node_name}')
+        
         node_edges = defaultdict(list)
         v = it[node_name]
+        
+        # print(f'debug - v {v}')
+        
         for edge_table in v:
             if way:
                 src, dst = "src", "dst"
