@@ -138,13 +138,14 @@ def export_pfb_job(
             for e in edges.toLocalIterator():
                 node_edges[e[src]].append({"dst_id": e[dst], "dst_name": dst_label})
 
-            if node_name == "histology":
-                if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in current_ids[src_label]:
-                    print("present current_ids {}".format(src_label))
-                if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in list(node_edges.keys()):
-                    print("present node_edges")
+            # if node_name == "histology":
+            #     if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in current_ids[src_label]:
+            #         print("present current_ids {}".format(src_label))
+            #     if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in list(node_edges.keys()):
+            #         print("present {node_edges}")
 
             current_ids[src_label].extend(list(node_edges.keys()))
+            current_ids[src_label] = list(set(current_ids[src_label]))
 
             if not way:
                 for e in edges.toLocalIterator():
