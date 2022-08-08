@@ -45,11 +45,7 @@ if __name__ == "__main__":
 
     dictionary_url = os.environ["DICTIONARY_URL"]
     dictionary, model = init_dictionary(url=dictionary_url)
-    print("LUcaaaaaaaa")
-    print(model)
     ddt = DataDictionaryTraversal(model)
-    print(model.Node.__subclasses__())
-    print(model.Edge.__subclasses__())
 
     # EXTRA_NODES is an optional comma-delimited list of nodes to additionally include in the PFB.
     if os.environ.get("EXTRA_NODES") is not None:

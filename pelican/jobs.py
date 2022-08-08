@@ -58,10 +58,9 @@ def get_ids_from_table(db, table, ids, id_column):
             )
             pass
         else:
-            # print(
-            #     f"[WARNING] Got a false-y ids_chunk by splitting ids: {ids}. Split: {split_by_n(ids)}"
-            # )
-            print("LUCAAAA - all good {}:{}".format(table, id_column))
+            print(
+                f"[WARNING] Got a false-y ids_chunk by splitting ids: {ids}. Split: {split_by_n(ids)}"
+            )
 
     return data if data and data.first() else None
 
@@ -89,7 +88,7 @@ def export_pfb_job(
     for way, node_name in ddt.full_traverse_path(
         root_node, extra_nodes=extra_nodes, include_upward=include_upward
     ):
-        print(f'node name: {node_name} - way: {way}')
+        # print(f'node name: {node_name} - way: {way}')
         # print(f'inside loop')
         # print(f'debug -  {way}')
         # print(f'debug -  {node_name}')
@@ -100,7 +99,7 @@ def export_pfb_job(
         # print(f'debug - v {v}')
         
         for edge_table in v:
-            print("{}".format(edge_table))
+            # print("{}".format(edge_table))
             if way:
                 src, dst = "src", "dst"
             else:
@@ -137,12 +136,6 @@ def export_pfb_job(
 
             for e in edges.toLocalIterator():
                 node_edges[e[src]].append({"dst_id": e[dst], "dst_name": dst_label})
-
-            # if node_name == "histology":
-            #     if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in current_ids[src_label]:
-            #         print("present current_ids {}".format(src_label))
-            #     if "9fc52ffb-f3a4-486c-ba7d-a561f1d47aca" in list(node_edges.keys()):
-            #         print("present {node_edges}")
 
             current_ids[src_label].extend(list(node_edges.keys()))
             current_ids[src_label] = list(set(current_ids[src_label]))
