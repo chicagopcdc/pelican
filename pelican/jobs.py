@@ -88,6 +88,7 @@ def export_pfb_job(
     for way, node_name in ddt.full_traverse_path(
         root_node, extra_nodes=extra_nodes, include_upward=include_upward
     ):
+        # print(f'node name: {node_name} - way: {way}')
         # print(f'inside loop')
         # print(f'debug -  {way}')
         # print(f'debug -  {node_name}')
@@ -98,6 +99,7 @@ def export_pfb_job(
         # print(f'debug - v {v}')
         
         for edge_table in v:
+            # print("{}".format(edge_table))
             if way:
                 src, dst = "src", "dst"
             else:
@@ -136,6 +138,7 @@ def export_pfb_job(
                 node_edges[e[src]].append({"dst_id": e[dst], "dst_name": dst_label})
 
             current_ids[src_label].extend(list(node_edges.keys()))
+            current_ids[src_label] = list(set(current_ids[src_label]))
 
             if not way:
                 for e in edges.toLocalIterator():
