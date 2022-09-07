@@ -22,7 +22,7 @@ if __name__ == "__main__":
     access_token = os.environ["ACCESS_TOKEN"]
     input_data = os.environ["INPUT_DATA"]
     access_format = os.environ["ACCESS_FORMAT"]
-    input_data_type = os.environ["INPUT_DATA_TYPE"]
+    input_data_type = os.environ.get("INPUT_DATA_TYPE", None)
 
     print("This is the format")
     print(access_format)
