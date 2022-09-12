@@ -22,6 +22,7 @@ if __name__ == "__main__":
     access_token = os.environ["ACCESS_TOKEN"]
     input_data = os.environ["INPUT_DATA"]
     access_format = os.environ["ACCESS_FORMAT"]
+    input_data_type = os.environ.get("INPUT_DATA_TYPE", None)
 
     print("This is the format")
     print(access_format)
@@ -31,8 +32,10 @@ if __name__ == "__main__":
     gql = GuppyGQL(
         node=node, hostname="http://revproxy-service", access_token=access_token
     )
+    case_ids = input_data.get("IDS", None)
     filters = json.dumps({"filter": input_data.get("filter", {})})
-    case_ids = gql.execute(filters=filters)
+    if not case_ids or input_data_type != "UUID":
+        case_ids = gql.execute(filters=filters)
 
     with open("/peregrine-creds.json") as pelican_creds_file:
         peregrine_creds = json.load(pelican_creds_file)
