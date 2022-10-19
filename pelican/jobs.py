@@ -165,7 +165,17 @@ def convert_to_node(x, is_base64):
     to_update = {}
     for name, value in obj.items():
         if value and is_base64[x["name"]][name]:
-            to_update[name] = decode_enum(value)
+            try:
+                to_update[name] = decode_enum(value)
+            except:
+                print('error decoding enum')
+                print('field:')
+                print(name)
+                print('value:')
+                print(value)
+                print('record:')
+                print(x)
+                raise
 
     obj.update(to_update)
 
