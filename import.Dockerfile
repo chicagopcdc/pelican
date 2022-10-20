@@ -1,4 +1,4 @@
-FROM quay.io/cdis/python:3.7-stretch
+FROM quay.io/cdis/python:python3.9-buster-stable
 
 ENV appname=pelican
 
@@ -9,8 +9,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    openjdk-8-jdk-headless \
-    libssl1.0.2 \
+    openjdk-11-jdk-headless \
+    libssl1.1 \
     libgnutls30 \
     # dependency for pyscopg2
     libpq-dev \
@@ -45,7 +45,7 @@ RUN wget -q ${SQOOP_INSTALLATION_URL} \
 ENV POSTGRES_JAR_VERSION="42.2.9"
 ENV POSTGRES_JAR_URL="https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JAR_VERSION}.jar" \
     POSTGRES_JAR_PATH=$SQOOP_HOME/lib/postgresql-${POSTGRES_JAR_VERSION}.jar \
-    JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+    JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 
 RUN wget ${POSTGRES_JAR_URL} -O ${POSTGRES_JAR_PATH}
 
@@ -71,7 +71,7 @@ WORKDIR /pelican
 RUN pip install --upgrade pip
 
 # install poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+RUN curl -sSL https://install.python-poetry.org | python
 
 COPY . /$appname
 WORKDIR /$appname
@@ -88,3 +88,12 @@ RUN . $HOME/.poetry/env \
 ENV PYTHONUNBUFFERED=1
 
 ENTRYPOINT . $HOME/.poetry/env && poetry run python job_import.py
+
+# ENV PATH="${PATH}:/root/.local/bin"
+# RUN poetry config virtualenvs.create false
+# RUN poetry install -vv --no-dev --no-interaction
+# RUN poetry show -v
+
+# ENV PYTHONUNBUFFERED=1
+
+# ENTRYPOINT poetry run python job_import.py
