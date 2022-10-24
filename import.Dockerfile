@@ -96,22 +96,27 @@ COPY poetry.lock pyproject.toml /$appname/
 RUN echo "pcdc log: installing poetry dependencies"
 
 # install Indexd and dependencies via poetry
-RUN . $HOME/.poetry/env \
-    && poetry config virtualenvs.create false \
-    && poetry install -vv --no-dev --no-interaction \
-    && poetry show -v
+
+# old command:
+# RUN . $HOME/.poetry/env \
+#     && poetry config virtualenvs.create false \
+#     && poetry install -vv --no-dev --no-interaction \
+#     && poetry show -v
+
+# ENV PYTHONUNBUFFERED=1
+
+# RUN echo "pcdc log: executing entrypoint command (job_import.py)"
+
+# ENTRYPOINT . $HOME/.poetry/env && poetry run python job_import.py
+
+# new command:
+ENV PATH="${PATH}:/root/.local/bin"
+RUN poetry config virtualenvs.create false
+RUN poetry install -vv --no-dev --no-interaction
+RUN poetry show -v
 
 ENV PYTHONUNBUFFERED=1
 
 RUN echo "pcdc log: executing entrypoint command (job_import.py)"
 
-ENTRYPOINT . $HOME/.poetry/env && poetry run python job_import.py
-
-# ENV PATH="${PATH}:/root/.local/bin"
-# RUN poetry config virtualenvs.create false
-# RUN poetry install -vv --no-dev --no-interaction
-# RUN poetry show -v
-
-# ENV PYTHONUNBUFFERED=1
-
-# ENTRYPOINT poetry run python job_import.py
+ENTRYPOINT poetry run python job_import.py
