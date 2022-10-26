@@ -78,10 +78,14 @@ if __name__ == "__main__":
         url=DB_URL, user=DB_USER, password=DB_PASS, driver="org.postgresql.Driver"
     )
 
+    print("writing dictionary")
+
     with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as avro_output:
         with PFBWriter(avro_output) as pfb_file:
             _from_dict(pfb_file, dictionary_url)
             filename = pfb_file.name
+
+    print("writing schema to pfb file")
 
     with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as avro_output:
         with PFBReader(filename) as reader:
@@ -103,6 +107,8 @@ if __name__ == "__main__":
         else:
             extra_nodes.append("aligned_reads_index")
 
+    print("calling export_pfb_job")
+
     with open(fname, "a+b") as avro_output:
         with PFBReader(filename) as reader:
             with PFBWriter(avro_output) as pfb_file:
@@ -117,12 +123,17 @@ if __name__ == "__main__":
                     True,  # include upward nodes: project, program etc
                 )
 
+    print("getting pelican creds")
+
     with open("/pelican-creds.json") as pelican_creds_file:
         pelican_creds = json.load(pelican_creds_file)
 
     avro_filename = "{}.avro".format(
         datetime.now().strftime("export_%Y-%m-%dT%H:%M:%S")
     )
+
+    print("uploading pfb export file to s3")
+
     s3file = s3upload_file(
         pelican_creds["manifest_bucket_name"],
         avro_filename,
@@ -130,6 +141,8 @@ if __name__ == "__main__":
         pelican_creds["aws_secret_access_key"],
         fname,
     )
+
+    print("printing pfb export s3 url")
 
     if access_format == "guid":
         # calculate md5 sum
