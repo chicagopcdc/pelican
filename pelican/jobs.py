@@ -52,6 +52,8 @@ def export_pfb_job(
 ):
     pfb_file.open_mode = "a+b"
 
+    print("pypfb 0.5.21 test: export_pfb_job start")
+
     start_time = datetime.now()
     print(start_time)
 
@@ -64,90 +66,101 @@ def export_pfb_job(
 
     nodes_to_write = []
 
-    for way, node_name in ddt.full_traverse_path(
-        root_node, extra_nodes=extra_nodes, include_upward=include_upward
-    ):
-        node_edges = defaultdict(list)
-        v = it[node_name]
-        for edge_table in v:
-            if way:
-                src, dst = "src", "dst"
-            else:
-                src, dst = "dst", "src"
+    print("pypfb 0.5.21 test: starting node enumeration")
 
-            src_label = ddt.get_edge_labels_by_table()[edge_table][src]
-            dst_label = ddt.get_edge_labels_by_table()[edge_table][dst]
+    try:
+        
+        for way, node_name in ddt.full_traverse_path(
+            root_node, extra_nodes=extra_nodes, include_upward=include_upward
+        ):
+            print(f"pypfb 0.5.21 test: node name: {node_name}")
+            node_edges = defaultdict(list)
+            v = it[node_name]
+            for edge_table in v:
+                if way:
+                    src, dst = "src", "dst"
+                else:
+                    src, dst = "dst", "src"
 
-            src += "_id"
-            dst += "_id"
+                src_label = ddt.get_edge_labels_by_table()[edge_table][src]
+                dst_label = ddt.get_edge_labels_by_table()[edge_table][dst]
 
-            select_ids = current_ids[dst_label]
+                src += "_id"
+                dst += "_id"
+
+                select_ids = current_ids[dst_label]
+
+                if not select_ids:
+                    print(
+                        "[INFO] nothing to select from edge table: {}".format(
+                            table_logs.format(edge_table)
+                        )
+                    )
+                    continue
+
+                edges = get_ids_from_table(db, edge_table, select_ids, dst)
+
+                if not edges:
+                    print(
+                        "[INFO] empty edge table: {}".format(table_logs.format(edge_table))
+                    )
+                    continue
+
+                edges = edges.rdd.map(
+                    lambda x: {"src_id": x["src_id"], "dst_id": x["dst_id"],}
+                )
+                print(table_logs.format(edge_table))
+
+                for e in edges.toLocalIterator():
+                    node_edges[e[src]].append({"dst_id": e[dst], "dst_name": dst_label})
+
+                current_ids[src_label].extend(list(node_edges.keys()))
+
+                if not way:
+                    for e in edges.toLocalIterator():
+                        node_edges[e[dst]].append({"dst_id": e[src], "dst_name": src_label})
+
+            node_table = ddt.get_node_table_by_label()[node_name]
+
+            select_ids = current_ids[node_name]
 
             if not select_ids:
                 print(
-                    "[INFO] nothing to select from edge table: {}".format(
-                        table_logs.format(edge_table)
+                    "[INFO] nothing to select from node table: {}".format(
+                        table_logs.format(node_table)
                     )
                 )
                 continue
 
-            edges = get_ids_from_table(db, edge_table, select_ids, dst)
+            nodes = get_ids_from_table(db, node_table, select_ids, "node_id")
 
-            if not edges:
-                print(
-                    "[INFO] empty edge table: {}".format(table_logs.format(edge_table))
-                )
+            if not nodes:
+                print("[INFO] empty node table: {}".format(table_logs.format(node_table)))
                 continue
 
-            edges = edges.rdd.map(
-                lambda x: {"src_id": x["src_id"], "dst_id": x["dst_id"],}
-            )
-            print(table_logs.format(edge_table))
-
-            for e in edges.toLocalIterator():
-                node_edges[e[src]].append({"dst_id": e[dst], "dst_name": dst_label})
-
-            current_ids[src_label].extend(list(node_edges.keys()))
-
-            if not way:
-                for e in edges.toLocalIterator():
-                    node_edges[e[dst]].append({"dst_id": e[src], "dst_name": src_label})
-
-        node_table = ddt.get_node_table_by_label()[node_name]
-
-        select_ids = current_ids[node_name]
-
-        if not select_ids:
-            print(
-                "[INFO] nothing to select from node table: {}".format(
-                    table_logs.format(node_table)
+            nodes = nodes.rdd.map(
+                lambda x: create_node_dict(
+                    x["node_id"], node_name, json.loads(x["_props"]), node_edges
                 )
             )
-            continue
+            print(table_logs.format(node_table))
 
-        nodes = get_ids_from_table(db, node_table, select_ids, "node_id")
+            # ensure the topological order for upward nodes:
+            # Example:
+            #   project -> program -> study -> subject
+            # this will postpone the writing of the upward nodes until the first downward node
+            if not way:
+                nodes_to_write = chain(nodes.toLocalIterator(), nodes_to_write)
+            else:
+                nodes_to_write = chain(nodes_to_write, nodes.toLocalIterator())
+                pfb_file.write(nodes_to_write, metadata=False)
+                nodes_to_write = []
+    except Exception as err:
+        print("pypfb 0.5.21 test: execption")
+        print(err)
+        raise
 
-        if not nodes:
-            print("[INFO] empty node table: {}".format(table_logs.format(node_table)))
-            continue
-
-        nodes = nodes.rdd.map(
-            lambda x: create_node_dict(
-                x["node_id"], node_name, json.loads(x["_props"]), node_edges
-            )
-        )
-        print(table_logs.format(node_table))
-
-        # ensure the topological order for upward nodes:
-        # Example:
-        #   project -> program -> study -> subject
-        # this will postpone the writing of the upward nodes until the first downward node
-        if not way:
-            nodes_to_write = chain(nodes.toLocalIterator(), nodes_to_write)
-        else:
-            nodes_to_write = chain(nodes_to_write, nodes.toLocalIterator())
-            pfb_file.write(nodes_to_write, metadata=False)
-            nodes_to_write = []
+    print("pypfb 0.5.21 test: finished node numeration")
 
     # Write any leftover nodes to pfb -- handles the corner case where
     # we postponed writing upward nodes but did not encounter any downward nodes
