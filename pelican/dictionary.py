@@ -1,5 +1,7 @@
 import itertools
 from collections import defaultdict
+from site import abs_paths
+from syslog import LOG_NOWAIT
 
 from dictionaryutils import DataDictionary, dictionary
 
@@ -12,6 +14,11 @@ def init_dictionary(url):
     from gdcdatamodel import models as md
 
     return d, md
+
+
+def log_now(msg):
+    from datetime import datetime
+    print(f"{datetime.now()} {msg}")
 
 
 class DataDictionaryTraversal:
@@ -93,6 +100,7 @@ class DataDictionaryTraversal:
         return r
 
     def _topology_order(self, node_name, source_edges, target_class):
+        log_now(f"ddt _topology_order start: {node_name}")
         stack, path = [node_name], []
 
         while stack:
@@ -117,16 +125,19 @@ class DataDictionaryTraversal:
                 stack.pop()
             else:
                 stack.append(visited_children[0])
-
+        log_now(f"ddt _topology_order finish: {node_name}, {path}")
         return path
 
     def get_upward_path(self, node_name):
+        log_now(f"ddt get_upward_path: {node_name}")
         return self._topology_order(node_name, "_get_edges_with_src", "__dst_class__")
 
     def get_downward_path(self, node_name):
+        log_now(f"ddt get_downward_path: {node_name}")
         return self._topology_order(node_name, "_get_edges_with_dst", "__src_class__")
 
     def full_traverse_path(self, node_name, extra_nodes=None, include_upward=False):
+        log_now(f"ddt full_traverse_path start: {node_name}")
         if include_upward:
             upward_path = list(
                 zip(itertools.repeat(False), self.get_upward_path(node_name))
@@ -148,4 +159,5 @@ class DataDictionaryTraversal:
             )
             path = downward_path
 
+        log_now(f"ddt full_traverse_path end: {node_name}, {path}")
         return path
