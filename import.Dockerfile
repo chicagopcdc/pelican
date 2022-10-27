@@ -24,9 +24,9 @@ ENV HADOOP_VERSION="3.2.1"
 ENV HADOOP_HOME="/hadoop" \
     HADOOP_INSTALLATION_URL="http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz"
 
-RUN wget ${HADOOP_INSTALLATION_URL} \
+RUN wget -q ${HADOOP_INSTALLATION_URL} \
     && mkdir -p $HADOOP_HOME \
-    && tar -xvf hadoop-${HADOOP_VERSION}.tar.gz -C ${HADOOP_HOME} --strip-components 1 \
+    && tar -xf hadoop-${HADOOP_VERSION}.tar.gz -C ${HADOOP_HOME} --strip-components 1 \
     && rm hadoop-${HADOOP_VERSION}.tar.gz \
     && rm -rf $HADOOP_HOME/share/doc
 
@@ -38,7 +38,7 @@ ENV SQOOP_HOME="/sqoop" \
 RUN wget -q ${SQOOP_INSTALLATION_URL} \
     && wget -qO- ${SQOOP_MD5_URL} | md5sum -c - \
     && mkdir -p $SQOOP_HOME \
-    && tar -xvf sqoop-${SQOOP_VERSION}.bin__hadoop-2.6.0.tar.gz -C ${SQOOP_HOME} --strip-components 1 \
+    && tar -xf sqoop-${SQOOP_VERSION}.bin__hadoop-2.6.0.tar.gz -C ${SQOOP_HOME} --strip-components 1 \
     && rm sqoop-${SQOOP_VERSION}.bin__hadoop-2.6.0.tar.gz \
     && rm -rf $SQOOP_HOME/docs
 
@@ -47,7 +47,7 @@ ENV POSTGRES_JAR_URL="https://jdbc.postgresql.org/download/postgresql-${POSTGRES
     POSTGRES_JAR_PATH=$SQOOP_HOME/lib/postgresql-${POSTGRES_JAR_VERSION}.jar \
     JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 
-RUN wget ${POSTGRES_JAR_URL} -O ${POSTGRES_JAR_PATH}
+RUN wget -q ${POSTGRES_JAR_URL} -O ${POSTGRES_JAR_PATH}
 
 ENV HADOOP_CONF_DIR="$HADOOP_HOME/etc/hadoop" \
     HADOOP_MAPRED_HOME="${HADOOP_HOME}" \
@@ -71,7 +71,8 @@ WORKDIR /pelican
 RUN pip install --upgrade pip
 
 # install poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+#RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+RUN curl -sSL https://install.python-poetry.org | python
 
 COPY . /$appname
 WORKDIR /$appname
