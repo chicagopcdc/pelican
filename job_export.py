@@ -34,8 +34,21 @@ if __name__ == "__main__":
     )
     case_ids = input_data.get("IDS", None)
     filters = json.dumps({"filter": input_data.get("filter", {})})
+
+    # REMOVE
+    print(f'LUCAaAAA - wrote pfb file at {access_token}')
+    print(f'LUCAaAAA - wrote pfb file at {input_data}')
+    print(f'LUCAaAAA - wrote pfb file at {access_format}')
+    print(f'LUCAaAAA - wrote pfb file at {input_data_type}')
+    print(f'LUCAaAAA - wrote pfb file at {case_ids}')
+    print(f'LUCAaAAA - wrote pfb file at {filters}')
+    # END REMOVE
+
     if not case_ids or input_data_type != "UUID":
+        print(f'INSIDE')
         case_ids = gql.execute(filters=filters)
+
+    print(f'LUCAaAAA 2 - wrote pfb file at {case_ids}')
 
     with open("/peregrine-creds.json") as pelican_creds_file:
         peregrine_creds = json.load(pelican_creds_file)
