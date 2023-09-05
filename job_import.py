@@ -60,6 +60,7 @@ if __name__ == "__main__":
     conn = psycopg2.connect(
         f"host='{DB_HOST}' dbname='postgres' user='{DB_USER}' password='{DB_PASS}'"
     )
+    conn.autocommit = True
     with conn:
         with conn.cursor() as curs:
             create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
