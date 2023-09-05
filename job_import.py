@@ -11,6 +11,7 @@ from pelican.jobs import import_pfb_job
 from pelican.dictionary import init_dictionary, DataDictionaryTraversal
 from pelican.s3 import download_file
 
+import psycopg2
 from psycopg2 import sql
 
 from sqlalchemy.sql import text
@@ -50,32 +51,32 @@ if __name__ == "__main__":
     # )
     DB_USER = sheepdog_creds["db_username"]
     DB_PASS = sheepdog_creds["db_password"]
+    DB_HOST = sheepdog_creds["db_host"]
 
     NEW_DB_NAME = input_data_json["db"]
 
-    # create a database in the name that was passed through
-    engine = sqlalchemy.create_engine(
-        "postgresql://{user}:{password}@{host}/postgres".format(
-            user=DB_USER, password=DB_PASS, host=sheepdog_creds["db_host"]
-        )
-    )
-    conn = engine.connect()
-    conn.execute("commit")
-
     print("we are creating a new database named ", NEW_DB_NAME)
 
-    create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
-    print("This is the db create command: ", create_db_command)
+    conn = psycopg2.connect(
+        f"host='{DB_HOST}' dbname='postgres' user='{DB_USER}' password='{DB_PASS}'"
+    )
+    with conn:
+        with conn.cursor() as curs:
+            create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
+            print("This is the db create command: ", create_db_command)
 
-    grant_db_access = text("grant all on database :db to sheepdog with grant option")
-    print("This is the db access command: ", grant_db_access)
+            grant_db_access = sql.SQL(
+                "grant all on database {} to sheepdog with grant option"
+            ).format(sql.Identifier(NEW_DB_NAME))
 
-    try:
-        conn.execute(create_db_command, db=NEW_DB_NAME)
-        conn.execute(grant_db_access, db=NEW_DB_NAME)
-    except Exception:
-        print("Unable to create database")
-        raise Exception
+            print("This is the db access command: ", grant_db_access)
+
+            try:
+                curs.execute(create_db_command)
+                curs.execute(grant_db_access)
+            except Exception:
+                print("Unable to create database")
+                raise Exception
 
     conn.close()
 
