@@ -61,25 +61,26 @@ if __name__ == "__main__":
         f"host='{DB_HOST}' dbname='postgres' user='{DB_USER}' password='{DB_PASS}'"
     )
     conn.autocommit = True
-    with conn:
-        with conn.cursor() as curs:
-            create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
-            print("This is the db create command: ", create_db_command)
+    curs = conn.cursor()
 
-            grant_db_access = sql.SQL(
-                "grant all on database {} to sheepdog with grant option"
-            ).format(sql.Identifier(NEW_DB_NAME))
+    create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
+    print("This is the db create command: ", create_db_command)
 
-            print("This is the db access command: ", grant_db_access)
+    grant_db_access = sql.SQL(
+        "grant all on database {} to sheepdog with grant option"
+    ).format(sql.Identifier(NEW_DB_NAME))
 
-            try:
-                curs.execute(create_db_command)
-                curs.execute(grant_db_access)
-            except Exception:
-                print("Unable to create database")
-                raise Exception
+    print("This is the db access command: ", grant_db_access)
 
-    conn.close()
+    try:
+        curs.execute(create_db_command)
+        curs.execute(grant_db_access)
+    except Exception:
+        print("Unable to create database")
+        raise Exception
+    finally:
+        curs.close()
+        conn.close()
 
     DB_URL = "jdbc:postgresql://{}/{}".format(sheepdog_creds["db_host"], NEW_DB_NAME)
 
