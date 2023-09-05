@@ -11,6 +11,8 @@ from pelican.jobs import import_pfb_job
 from pelican.dictionary import init_dictionary, DataDictionaryTraversal
 from pelican.s3 import download_file
 
+from psycopg2 import sql
+
 from sqlalchemy.sql import text
 
 if __name__ == "__main__":
@@ -62,7 +64,7 @@ if __name__ == "__main__":
 
     print("we are creating a new database named ", NEW_DB_NAME)
 
-    create_db_command = text("create database :db")
+    create_db_command = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NEW_DB_NAME))
     print("This is the db create command: ", create_db_command)
 
     grant_db_access = text("grant all on database :db to sheepdog with grant option")
