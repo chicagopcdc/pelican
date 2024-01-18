@@ -1,4 +1,5 @@
 import json
+import requests
 
 from .base_gql import BaseGQL
 
@@ -13,10 +14,6 @@ class GuppyGQL(BaseGQL):
         query_json = {"query": query}
         if filters:
             query_json["variables"] = filters
-            # Ensure that the variables are encoded for the POST request
-            var = query_json["variables"]
-            var = json.loads(var)
-            query_json["variables"] = var
 
         r = BaseGQL._execute(self, query_json)
         try:
@@ -35,7 +32,8 @@ class GuppyGQL(BaseGQL):
         }
         if filters:
             query.update(json.loads(filters))
-        r = BaseGQL._execute(self, query)
+
+        r = BaseGQL._send_request(self, query)
         return r
 
     def _graphql_endpoint(self, filters=None):
@@ -44,11 +42,6 @@ class GuppyGQL(BaseGQL):
         query_json = {"query": query}
         if filters:
             query_json["variables"] = filters
-            # Ensure that the variables are encoded for the POST request
-            var = query_json["variables"]
-            var = json.loads(var)
-            query_json["variables"] = var
-            
         r = BaseGQL._execute(self, query_json)
         try:
             r = r["data"][self.node]
@@ -62,10 +55,6 @@ class GuppyGQL(BaseGQL):
         query_json = {"query": query}
         if filters:
             query_json["variables"] = filters
-            # Ensure that the variables are encoded for the POST request
-            var = query_json["variables"]
-            var = json.loads(var)
-            query_json["variables"] = var
         r = BaseGQL._execute(self, query_json)
         try:
             r = r["data"][self.node]
