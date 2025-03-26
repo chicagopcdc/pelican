@@ -17,3 +17,4 @@ The `pelican-import` job is only used to restore a PFB into a clean database.
 ## Release
 
 To create a new release, just add a `release` label to your PR and a GitHub Action will be triggered.
+
