@@ -5,7 +5,7 @@ import hashlib
 
 from datetime import datetime
 
-from pfb.importers.gen3dict import _from_dict
+from pfb.importers.gen3dict import write_from_dict
 from pfb.reader import PFBReader
 from pfb.writer import PFBWriter
 from pyspark import SparkConf
@@ -18,6 +18,7 @@ from pelican.jobs import export_pfb_job
 from pelican.s3 import s3upload_file
 from pelican.indexd import indexd_submit
 from pelican.mds import metadata_submit_expiration
+import pfb_to_zip
 from pelican.config import logger
 
 if __name__ == "__main__":
@@ -28,7 +29,10 @@ if __name__ == "__main__":
     input_data_type = os.environ.get("INPUT_DATA_TYPE", None)
     # the PFB file and indexd/mds records expire after 14 days by default
     record_expiration_days = os.environ.get("RECORD_EXPIRATION_DAYS", 14)
-
+    output_file_format = os.environ.get("OUTPUT_FILE_FORMAT", "AVRO")
+    input_variables_for_file_conversion = os.environ.get("INPUT_VARIABLES_FOR_FILE_CONVERSION", {"config": "config.py", "terminology": None, "analysis": None, "is_black_list": False})
+    if isinstance(input_variables_for_file_conversion, str):
+        input_variables_for_file_conversion = json.loads(input_variables_for_file_conversion)
     logger.info("This is the format")
     logger.info(access_format)
 
@@ -113,7 +117,7 @@ if __name__ == "__main__":
 
     with tempfile.NamedTemporaryFile(mode="w+b", delete=False) as avro_output:
         with PFBWriter(avro_output) as pfb_file:
-            _from_dict(pfb_file, dictionary_url)
+            write_from_dict(pfb_file, dictionary_url)
             filename = pfb_file.name
             # print(f'debug - wrote pfb file at {filename}')
 
@@ -159,13 +163,60 @@ if __name__ == "__main__":
         datetime.now().strftime("export_%Y-%m-%dT%H:%M:%S")
     )
     # print(f'debug - avro_filename: {avro_filename}')
-    s3file = s3upload_file(
-        pelican_creds["manifest_bucket_name"],
-        avro_filename,
-        pelican_creds["aws_access_key_id"],
-        pelican_creds["aws_secret_access_key"],
-        fname,
-    )
+
+    # check output file format
+    if output_file_format.upper() == "ZIP":
+        print("debug - output file format is ZIP")
+        print(fname)
+        print(f"{os.path.dirname(pfb_to_zip.__file__)}" + "/config.py")
+        # Create the new file with the name specified by avro_filename
+        output_dir = os.path.dirname(fname)
+        avro_path = os.path.join(output_dir, avro_filename)
+        with open(fname, "rb") as source_file, open(avro_path, "wb") as target_file:
+            # Read the contents of fname and write them to avro_filename
+            target_file.write(source_file.read())
+
+        print(f"File '{avro_filename}' created with the contents of.")
+        pfb_export = pfb_to_zip.PFBExporter(
+            avro_path,
+            "/tmp/tmp",
+            "/tmp/output/",
+            f"{os.path.dirname(pfb_to_zip.__file__)}" + "/" + input_variables_for_file_conversion.get("config"),
+            input_variables_for_file_conversion.get("terminology"),
+            True if input_variables_for_file_conversion.get("analysis") and input_variables_for_file_conversion.get("analysis") != "" else False,
+        )
+        if not pfb_export:
+            raise RuntimeError("One or more problems occurred during the initialization of the PFBExporter class")
+
+        pfb_export.initialize()
+        pfb_export.export()
+        pfb_export.filter_attributes(is_black_list=input_variables_for_file_conversion.get("is_black_list", False))
+        pfb_export.setup_and_run_analysis(input_variables_for_file_conversion.get("analysis"))
+        pfb_export.to_ontology_code() 
+        pfb_export.zip()
+        pfb_export.clean_up()
+
+        s3file = s3upload_file(
+            pelican_creds["manifest_bucket_name"],
+            avro_filename.split(".")[0] + ".zip",
+            pelican_creds["aws_access_key_id"],
+            pelican_creds["aws_secret_access_key"],
+            pfb_export.zip_file_output_path,
+        )
+         
+    else:
+        if not output_file_format or output_file_format.upper() != "AVRO":
+            raise RuntimeError(
+                f"Invalid output file format '{output_file_format}'. Must be 'AVRO' or 'ZIP'."
+            )
+
+        s3file = s3upload_file(
+            pelican_creds["manifest_bucket_name"],
+            avro_filename,
+            pelican_creds["aws_access_key_id"],
+            pelican_creds["aws_secret_access_key"],
+            fname,
+        )
     # print('debug - uploading to s3')
 
     if access_format == "guid":
