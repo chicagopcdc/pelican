@@ -27,6 +27,7 @@ RUN dnf update && dnf install -y \
     tar \
     java-11-amazon-corretto \
     gnutls \
+    R \
     && rm -rf /var/cache/yum
 
 ENV HADOOP_VERSION="3.2.1"
@@ -57,6 +58,7 @@ ENV POSTGRES_JAR_VERSION="42.2.9"
 ENV POSTGRES_JAR_URL="https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JAR_VERSION}.jar" \
     POSTGRES_JAR_PATH=$SQOOP_HOME/lib/postgresql-${POSTGRES_JAR_VERSION}.jar \
     JAVA_HOME="/usr/lib/jvm/java-11-amazon-corretto"
+    #JAVA_HOME="/usr/lib/jvm/java-11-amazon-corretto.aarch64"
 
 RUN wget ${POSTGRES_JAR_URL} -O ${POSTGRES_JAR_PATH}
 
@@ -76,6 +78,8 @@ ENV HADOOP_CONF_DIR="$HADOOP_HOME/etc/hadoop" \
 RUN mkdir -p $ACCUMULO_HOME $HIVE_HOME $HBASE_HOME $HCAT_HOME $ZOOKEEPER_HOME
 
 RUN chown -R gen3:gen3 $ACCUMULO_HOME $HIVE_HOME $HBASE_HOME $HCAT_HOME $ZOOKEEPER_HOME $JAVA_HOME $POSTGRES_JAR_PATH
+
+RUN chown -R gen3:gen3 /usr/lib64/R
 
 ENV PATH=${SQOOP_HOME}/bin:${HADOOP_HOME}/sbin:$HADOOP_HOME/bin:${JAVA_HOME}/bin:${PATH}
 

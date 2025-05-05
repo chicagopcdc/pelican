@@ -18,7 +18,6 @@ from pelican.jobs import export_pfb_job
 from pelican.s3 import s3upload_file
 from pelican.indexd import indexd_submit
 from pelican.mds import metadata_submit_expiration
-from pfb_to_zip.pfb_to_zip import PFBExporter
 import pfb_to_zip
 from pelican.config import logger
 
@@ -31,6 +30,9 @@ if __name__ == "__main__":
     # the PFB file and indexd/mds records expire after 14 days by default
     record_expiration_days = os.environ.get("RECORD_EXPIRATION_DAYS", 14)
     output_file_format = os.environ.get("OUTPUT_FILE_FORMAT", "AVRO")
+    input_variables_for_file_conversion = os.environ.get("INPUT_VARIABLES_FOR_FILE_CONVERSION", {"config": "config.py", "terminology": None, "analysis": None, "is_black_list": False})
+    if isinstance(input_variables_for_file_conversion, str):
+        input_variables_for_file_conversion = json.loads(input_variables_for_file_conversion)
     logger.info("This is the format")
     logger.info(access_format)
 
@@ -175,18 +177,21 @@ if __name__ == "__main__":
             target_file.write(source_file.read())
 
         print(f"File '{avro_filename}' created with the contents of.")
-        pfb_export = PFBExporter(
+        pfb_export = pfb_to_zip.PFBExporter(
             avro_path,
             "/tmp/tmp",
             "/tmp/output/",
-            f"{os.path.dirname(pfb_to_zip.__file__)}" + "/config.py"
+            f"{os.path.dirname(pfb_to_zip.__file__)}" + "/" + input_variables_for_file_conversion.get("config"),
+            input_variables_for_file_conversion.get("terminology"),
+            True if input_variables_for_file_conversion.get("analysis") and input_variables_for_file_conversion.get("analysis") != "" else False,
         )
         if not pfb_export:
             raise RuntimeError("One or more problems occurred during the initialization of the PFBExporter class")
 
         pfb_export.initialize()
         pfb_export.export()
-        pfb_export.filter_attributes(is_black_list=False)
+        pfb_export.filter_attributes(is_black_list=input_variables_for_file_conversion.get("is_black_list", False))
+        pfb_export.setup_and_run_analysis(input_variables_for_file_conversion.get("analysis"))
         pfb_export.to_ontology_code() 
         pfb_export.zip()
         pfb_export.clean_up()
