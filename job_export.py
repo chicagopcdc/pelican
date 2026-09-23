@@ -65,10 +65,22 @@ if __name__ == "__main__":
     gql = GuppyGQL(
         node=node, hostname="http://revproxy-service", access_token=access_token
     )
+
+    # A data request can have more than one associated search (filter set). The
+    # caller sends them as `filters`; `filter` is the single-search form kept
+    # for backwards compatibility with callers that have not been updated yet.
+    filter_list = input_data.get("filters")
+    if not filter_list:
+        filter_list = [input_data.get("filter", {})]
+
+    logger.info(f"exporting a cohort built from {len(filter_list)} filter set(s)")
+
     case_ids = input_data.get("IDS", None)
-    filters = json.dumps({"filter": input_data.get("filter", {})})
     if not case_ids or input_data_type != "UUID":
-        case_ids = gql.execute(filters=filters)
+        # the cohort is the union of every filter set, de-duplicated, so the
+        # export is a single set of data rather than one set per search
+        case_ids = gql.execute_many(filter_list)
+        logger.info(f"resolved {len(case_ids)} distinct {node}(s) to export")
 
     try:
         with open("/peregrine-creds.json") as pelican_creds_file:
@@ -253,14 +265,8 @@ if __name__ == "__main__":
 
         md5_digest = md5_sum.hexdigest()
 
-        # get authz fields
-        auth_paths = gql._graphql_auth_resource_path(filters=filters)
-
-        authz = []
-        if len(auth_paths) > 0:
-            for path in auth_paths:
-                if path["auth_resource_path"] not in authz:
-                    authz.append(path["auth_resource_path"])
+        # get authz fields, covering every filter set of the export
+        authz = gql.auth_resource_paths_many(filter_list)
 
         hostname = os.environ["GEN3_HOSTNAME"]
         COMMONS = "https://" + hostname + "/"
