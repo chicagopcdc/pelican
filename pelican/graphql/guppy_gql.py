@@ -78,3 +78,41 @@ class GuppyGQL(BaseGQL):
         except KeyError:
             ids = []
         return ids
+
+    def execute_many(self, filter_list):
+        """
+        Resolve several filters into a single, de-duplicated list of ids.
+
+        A data request can carry more than one associated search (filter set),
+        but the exported cohort is a single set of data rather than one set per
+        search. Each filter is resolved independently - they cannot be merged
+        into one Guppy query without assuming the filters compose under `OR` -
+        and the results are unioned here.
+
+        Order is the first-seen order across the filters, so an export is
+        reproducible for a given filter ordering.
+        """
+        seen = set()
+        ids = []
+        for one_filter in filter_list:
+            for case_id in self.execute(filters=json.dumps({"filter": one_filter})):
+                if case_id not in seen:
+                    seen.add(case_id)
+                    ids.append(case_id)
+        return ids
+
+    def auth_resource_paths_many(self, filter_list):
+        """
+        Collect the distinct auth_resource_paths covering every filter of a
+        multi-search export, so the indexd record is authz'd against the whole
+        exported cohort and not just the first search.
+        """
+        authz = []
+        for one_filter in filter_list:
+            paths = self._graphql_auth_resource_path(
+                filters=json.dumps({"filter": one_filter})
+            )
+            for path in paths:
+                if path["auth_resource_path"] not in authz:
+                    authz.append(path["auth_resource_path"])
+        return authz
